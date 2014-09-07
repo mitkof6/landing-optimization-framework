@@ -212,8 +212,8 @@ class LandingOptimizationSystem : public OptimizerSystem {
 		ControllerSet& controllers = osimModel.updControllerSet();
 		pushNormalizedParametersToControllers(newParameters, controllers);
 		
-        newParameters.dump();
-        osimModel.print("tested model.osim");
+        //newParameters.dump();
+        //osimModel.print("tested model.osim");
 
 		osimModel.equilibrateMuscles(s);
 
@@ -222,7 +222,7 @@ class LandingOptimizationSystem : public OptimizerSystem {
 		manager.integrate(s);
 
 		Storage& q_out = manager.getStateStorage();
-        q_out.print("last simulated states.sto");
+        //q_out.print("last simulated states.sto");
 
 		double rms_error = evalRMSerror(q_out, ref_q);
         //cout << "rms error = " << rms_error << endl;
@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
 //	try {
 		std::clock_t startTime = std::clock();	
 
-		string modelFile = "InputDropModel.osim";
+		string modelFile = "optimizedModel.osim";
 		string ctrlFile = "InitialControllerSet.xml";
 		string kinematicsFile = "DesiredKinematics.sto";
 		double ti = 0.0;
@@ -478,6 +478,7 @@ int main(int argc, char* argv[])
 
 			osimModel.print("optimizedModel.osim");
 			optimizedControllers.print("optimizedControllers.xml");
+			
 
             string date = get_date();
             replace(date.begin(), date.end(), ':', '-');
