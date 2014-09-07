@@ -483,8 +483,8 @@ int main(int argc, char* argv[])
             replace(date.begin(), date.end(), ':', '-');
             cout << "Completion date and time: " << date << endl;
 
-            osimModel.print(string("optimizedModel") + date + string(".osim"));
-            optimizedControllers.print(string("optimizedControllers") + date + string(".xml"));
+            osimModel.print(string("optimizedModel ") + date + string(".osim"));
+            optimizedControllers.print(string("optimizedControllers ") + date + string(".xml"));
 			cout << "\nMinimum Objective Function Value = " << f << endl;
 
 		} else {
