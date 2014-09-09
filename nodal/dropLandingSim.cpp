@@ -26,8 +26,8 @@
 // length gain, speed gain) of muscle stretch controllers to match a given motion.
 // This will build an executable that can take the following arguments:
 //
-// -m <InputDropModel.osim>: model file to be loaded
-// -csfile <InitialControllerSet.xml>: initial guess of controller set parameters for optimizer
+// -m <optimizedDropModel.osim>: model file to be loaded
+// -csfile <optimizedControllerSet.xml>: initial guess of controller set parameters for optimizer
 // -kfile <DesiredKinematics.sto>: trajectories of desired kinematics
 // -ti <0.0> default time from which to start simulating
 // -tf <0.1> default simulation end time
@@ -274,8 +274,8 @@ int main(int argc, char* argv[])
 //	try {
 		std::clock_t startTime = std::clock();	
 
-		string modelFile = "optimizedModel.osim";
-		string ctrlFile = "InitialControllerSet.xml";
+		string modelFile = "bestModel.osim";
+		string ctrlFile = "bestControllers.xml";
 		string kinematicsFile = "DesiredKinematics.sto";
 		double ti = 0.0;
 		double tf = 0.1; // 100 milliseconds
@@ -328,7 +328,13 @@ int main(int argc, char* argv[])
         
 
 		OpenSim::Model osimModel(modelFile);
-        if (!doOpt) { osimModel.setUseVisualizer(true); }
+		// make sure the platform has been shifted to the right place
+		Vec3 platform_origin(0.0, 0.0, 0.35);
+		osimModel.updJointSet().get("ground_platform").setLocationInParent(platform_origin);
+		osimModel.updForceSet().get("foot_floor_l").set_isDisabled(true);
+
+        if (!doOpt) { //osimModel.setUseVisualizer(true); 
+		}
 		// For safety, empty the controllerSet
 		osimModel.updControllerSet().clearAndDestroy();
 
@@ -350,9 +356,9 @@ int main(int argc, char* argv[])
 		// The number of parameters is (numController*3) because each controller has a desired length, length gain, and speed gain
 		int numControllers, numParameters;
 		numControllers = controllers.getSize();
-		optLog << "numControllers = " << numControllers << endl;
+		//optLog << "numControllers = " << numControllers << endl;
 		numParameters = numControllers*3;
-		optLog << "numParameters = " << numParameters << endl;
+		//optLog << "numParameters = " << numParameters << endl;
 
 		/* Define initial values for controllerParameters. */
 		
@@ -417,6 +423,8 @@ int main(int argc, char* argv[])
 			
 		if (doOpt) 
 		{
+			optLog << "numControllers = " << numControllers << endl;
+			optLog << "numParameters = " << numParameters << endl;
             cout << "Creating optimization system." << endl;
             // Create the OptimizationSystem. Initialize the objective function value "f".
             LandingOptimizationSystem sys(numParameters, osimState, osimModel, manager, *q_desired);
@@ -472,78 +480,76 @@ int main(int argc, char* argv[])
 			}
 	
 			cout << "Elapsed time = " << (std::clock()-startTime)/CLOCKS_PER_SEC << "s" << endl;
-
+			cout << "Min performance = " << f << endl;
+			//osimModel.print("final model.osim");
 			ControllerSet& optimizedControllers = osimModel.updControllerSet();
 			pushNormalizedParametersToControllers(controllerParameters, optimizedControllers);
 
 			osimModel.print("optimizedModel.osim");
 			optimizedControllers.print("optimizedControllers.xml");
 			
-
-            string date = get_date();
-            replace(date.begin(), date.end(), ':', '-');
-            cout << "Completion date and time: " << date << endl;
-
-            osimModel.print(string("optimizedModel ") + date + string(".osim"));
-            optimizedControllers.print(string("optimizedControllers ") + date + string(".xml"));
 			cout << "\nMinimum Objective Function Value = " << f << endl;
-
-		} else {
-
-			// Run a single integration either specific control file specified without -opt tag
-
-            //initialState.setY(osimState.getY());
-            //osimModel.equilibrateMuscles(initialState);
-			// Adding analyses
-			ForceReporter* forceReporter = new ForceReporter(&osimModel);
-			forceReporter->setName("ForceReporter");
-			forceReporter->includeConstraintForces(true);
-			osimModel.addAnalysis(forceReporter);
-
-			/*
-			PointKinematics* pointKinematics_toe = new PointKinematics(&osimModel);
-			pointKinematics_toe->setName("PointKinematics_TOE");
-			pointKinematics_toe->setBodyPoint("foot", toeInFootPosition);
-			osimModel.addAnalysis(pointKinematics_toe);
-
-			PointKinematics* pointKinematics_heel = new PointKinematics(&osimModel);
-			pointKinematics_heel->setName("PointKinematics_HEEL");
-			pointKinematics_heel->setBodyPoint("foot", Vec3(0.0));
-			osimModel.addAnalysis(pointKinematics_heel);
-			*/
-			startTime = std::clock();
-
-			manager.setWriteToStorage(true);
-			manager.setPerformAnalyses(true);
-
-			// Integrate from initial time to final time and integrate
-			manager.setInitialTime(ti);
-			manager.setFinalTime(tf);
-            cout << "Saving current model" << endl;
-
-            osimModel.print("model_to_integrate.osim");
-            //osimModel.setUseVisualizer(true);
             
 
-            cout << "Integrating from " << ti << " to " << tf << " seconds." << endl;
-			manager.integrate(osimState);
-
-			Storage states(manager.getStateStorage());
-			states.print("states.sto");
-
-			Storage forceStorage = forceReporter->getForceStorage();
-			forceStorage.print("forceReporter.sto");
-
-			clock_t endTime = std::clock();
-			fwdLog << "computeTime: " << endTime - startTime << "ms" << endl;
-
-			double rms_error = evalRMSerror(states, *q_desired);
-			fwdLog << "kinematic RMS error = " << rms_error;
-
-            int pause;
-            cout << "Enter any letter key to close...";
-            cin >> pause;
 		}
+
+
+		// Run a single integration either specific control file specified without -opt tag
+
+        //initialState.setY(osimState.getY());
+        //osimModel.equilibrateMuscles(initialState);
+		// Adding analyses
+		ForceReporter* forceReporter = new ForceReporter(&osimModel);
+		forceReporter->setName("ForceReporter");
+		forceReporter->includeConstraintForces(true);
+		osimModel.addAnalysis(forceReporter);
+
+		startTime = std::clock();
+
+		manager.setWriteToStorage(true);
+		manager.setPerformAnalyses(true);
+
+		// Integrate from initial time to final time and integrate
+		manager.setInitialTime(ti);
+		manager.setFinalTime(tf);
+        cout << "Saving current model" << endl;
+
+        osimModel.print("model_to_integrate.osim");
+        //osimModel.setUseVisualizer(true);
+            
+
+        cout << "Integrating from " << ti << " to " << tf << " seconds." << endl;
+		manager.integrate(osimState);
+
+		Storage states(manager.getStateStorage());
+
+		string date = get_date();
+		replace(date.begin(), date.end(), ':', '-');
+		cout << "Completion date and time: " << date << endl;
+
+		osimModel.print(string("optimizedModel ") + date + string(".osim"));
+		osimModel.updControllerSet().print(string("optimizedControllers ") + date + string(".xml"));
+		
+		states.print("LastSimulatedStates.sto");
+
+		if (doOpt) { 
+			states.print("OptimizedStates.sto");
+			states.print(string("optimizedStates ") + date + string(".xml"));
+		}
+
+		Storage forceStorage = forceReporter->getForceStorage();
+		forceStorage.print("forceReporter.sto");
+
+		clock_t endTime = std::clock();
+		fwdLog << "computeTime: " << endTime - startTime << "ms" << endl;
+
+		double rms_error = evalRMSerror(states, *q_desired);
+		fwdLog << "kinematic RMS error = " << rms_error;
+
+        int pause;
+        cout << "Enter any letter key to close...";
+        cin >> pause;
+		
 
 #ifdef USE_MPI
 	for (int rank = 1; rank < numtasks; ++rank) {
