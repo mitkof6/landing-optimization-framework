@@ -526,19 +526,21 @@ int main(int argc, char* argv[])
         string date = get_date();
         replace(date.begin(), date.end(), ':', '-');
         cout << "Completion date and time: " << date << endl;
-
-        osimModel.print(string("optimizedModel ") + date + string(".osim"));
-        osimModel.updControllerSet().print(string("optimizedControllers ") + date + string(".xml"));
+        
+        
         
         states.print("LastSimulatedStates.sto");
 
         if (doOpt) { 
+            osimModel.setName(string("optimizedModel ") + date);
+            osimModel.print(string("optimizedModel ") + date + string(".osim"));
+            osimModel.updControllerSet().print(string("optimizedControllers ") + date + string(".xml"));
             states.print("OptimizedStates.sto");
             states.print(string("optimizedStates ") + date + string(".sto"));
         }
 
         Storage forceStorage = forceReporter->getForceStorage();
-        forceStorage.print("forceReporter.sto");
+        forceStorage.print(string("forceReporter ") + date + string(".sto"));
 
         clock_t endTime = std::clock();
         fwdLog << "computeTime: " << endTime - startTime << "ms" << endl;

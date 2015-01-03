@@ -67,9 +67,10 @@ int evalCount = 0;
 double bestSoFar = SimTK::Infinity;
 
 double integratorTolerance = 1.0e-4;
-const static double initialTime = 0.0, finalTime = 0.1;
+const static double initialTime = 0.0, finalTime = 0.15;
 const static double reflexDelay = 0.06; // 60 miliseconds
 const static double platformAngle = 30; // degrees
+const static double invertorScaleFactor = 57.8 / 62.0; // will scale invertor activity by ratio of evertor to invertor strength
 const static std::string resultDir = "";
 // variables related to objective function
 
@@ -246,18 +247,20 @@ void ExploreCoactivation(Model* model, State& initial_state, double ti, double t
     ControllerSet& controllers = model->updControllerSet();
 
     // set all invertor excitations to the predetermined value
+    // invertors are stronger than evertors, so must scale down invertor activity to produce co-activation with no net moment
+    double invertorActivation = activation*invertorScaleFactor;
     PrescribedController* invControls = dynamic_cast<PrescribedController*> (&model->updControllerSet().get("inverter_controls_r"));
     invControls->set_isDisabled(false);
     for (int i = 0; i<invControls->getActuatorSet().getSize(); i++)
     {
 
-        OpenSim::Constant currentAct(activation);
+        OpenSim::Constant currentAct(invertorActivation);
         invControls->prescribeControlForActuator(i, currentAct.clone());
 
         OpenSim::ActivationFiberLengthMuscle* muscle = dynamic_cast<OpenSim::ActivationFiberLengthMuscle*> (&invControls->updActuators().get(i));
         if (muscle)
         {
-            muscle->setDefaultActivation(activation);
+            muscle->setDefaultActivation(invertorActivation);
         }
     }
 
@@ -413,7 +416,7 @@ int main(int argc, char* argv[])
 
         string modelFile = "bestModel.osim";
         string ctrlFile = "reflexControllers.xml";
-        string kinematicsFile = "DesiredKinematics.sto";
+        string kinematicsFile = "initialState.sto";
         double ti = initialTime;
         double tf = finalTime; 
 
@@ -445,12 +448,12 @@ int main(int argc, char* argv[])
         
 
         OpenSim::Model osimModel(modelFile);
-        Vec3 platform_origin(0.0, 0.0, 0.29);
-        Vec3 twist_y(0.0, 0.20943951023931953, 0.0);
+        Vec3 platform_origin(0.0, 0.015, 0.45);
+        //Vec3 twist_y(0.0, 0.20943951023931953, 0.0);
         osimModel.updJointSet().get("ground_platform").setLocationInParent(platform_origin);
         //osimModel.updJointSet().get("ground_platform").setOrientationInParent(twist_y);
 
-        osimModel.updForceSet().get("foot_floor_l").set_isDisabled(true);
+        //osimModel.updForceSet().get("foot_floor_l").set_isDisabled(true);
         CoordinateSet& coords = osimModel.updCoordinateSet();
         //coords.get("platform_rx").set_locked(false);
         //coords.get("platform_rx").setDefaultValue(platformAngle*Pi/180);
