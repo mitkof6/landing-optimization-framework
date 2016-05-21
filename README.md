@@ -4,16 +4,16 @@ This file generates a main() to optimize the control parameters (desired length
 length gain, speed gain) of muscle stretch controllers to match a given motion.
 This will build an executable that can take the following arguments:
 
-  -m <optimizedDropModel.osim>: model file to be loaded
-  -csfile <optimizedControllerSet.xml>: initial guess of controller set parameters for optimizer
-  -kfile <DesiredKinematics.sto>: trajectories of desired kinematics
-  -ti <0.0> default time from which to start simulating
-  -tf <0.1> default simulation end time
-  -opt: flag to run optimization
-  -resume: flag to run optimization but resume using resumecmaes.dat file
-  -lambda <int>: CMA parameter, set number of samples per outer iteration
-  -sigma <double>: CMA parameter, set initial constant of covariance matrix
-  -maxIters <int>: optimizer parameter, set max outer iterations
+*  -m <optimizedDropModel.osim>: model file to be loaded
+*  -csfile <optimizedControllerSet.xml>: initial guess of controller set parameters for optimizer
+*  -kfile <DesiredKinematics.sto>: trajectories of desired kinematics
+*  -ti <0.0> default time from which to start simulating
+*  -tf <0.1> default simulation end time
+*  -opt: flag to run optimization
+*  -resume: flag to run optimization but resume using resumecmaes.dat file
+*  -lambda <int>: CMA parameter, set number of samples per outer iteration
+*  -sigma <double>: CMA parameter, set initial constant of covariance matrix
+*  -maxIters <int>: optimizer parameter, set max outer iterations
 
 ###Usage: 
 ```
